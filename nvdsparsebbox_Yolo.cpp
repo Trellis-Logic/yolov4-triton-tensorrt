@@ -137,20 +137,43 @@ static bool NvDsInferParseYoloV4(
                   << ", detected by network: " << NUM_CLASSES_YOLO << std::endl;
     }
 
+    std::cout << "Parser output layers" << std::endl;
+
+    for (auto it = outputLayersInfo.begin();
+          it != outputLayersInfo.end();
+          it++ ) {
+        const NvDsInferLayerInfo &info = *it;
+        std::cout << "Name " << info.layerName << " isInput " <<
+            info.isInput << " bindingIndex " << info.bindingIndex <<
+            " numDims " << info.inferDims.numDims <<
+            " num Elements" << info.inferDims.numElements << std::endl;
+
+        for (unsigned int dim = 0; dim < info.inferDims.numDims; dim++ ) {
+            std::cout << "    Dim " << dim << " size " << info.inferDims.d[dim] << std::endl;
+        }
+    }
+
+    std::cout << "End of output layers" << std::endl;
+
     std::vector<NvDsInferParseObjectInfo> objects;
-    
     const NvDsInferLayerInfo &boxes = outputLayersInfo[0]; // num_boxes x 4
     const NvDsInferLayerInfo &scores = outputLayersInfo[1]; // num_boxes x num_classes
     const NvDsInferLayerInfo &subbox = outputLayersInfo[2];
+
     //* printf("%d\n", subbox.inferDims.numDims);
     // 3 dimensional: [num_boxes, 1, 4]
     assert(boxes.inferDims.numDims == 3);
     // 2 dimensional: [num_boxes, num_classes]
-    assert(scores.inferDims.numDims == 2);
+    if (scores.inferDims.numDims != 2) {
+        std::cerr << "WARNING: expected 2 dims in scores output, found "
+                  << scores.inferDims.numDims
+                  << std::endl;
+    }
+    if (scores.inferDims.numDims >= 2) {
+        // The second dimension should be num_classes
+        assert(detectionParams.numClassesConfigured == scores.inferDims.d[1]);
+    }
 
-    // The second dimension should be num_classes
-    assert(detectionParams.numClassesConfigured == scores.inferDims.d[1]);
-    
     uint num_bboxes = boxes.inferDims.d[0];
 
     // std::cout << "Network Info: " << networkInfo.height << "  " << networkInfo.width << std::endl;
