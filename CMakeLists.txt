@@ -5,6 +5,7 @@ PROJECT(yolov4-triton-tensorrt VERSION 1.1.0 LANGUAGES CXX)
 # CUDA
 find_package(CUDA REQUIRED)
 set(CUDA_NVCC_PLAGS ${CUDA_NVCC_PLAGS};-std=c++11;-g;-G;-gencode;arch=compute_75;code=sm_75)
+include_directories(/opt/nvidia/deepstream/deepstream-6.0/sources/includes/)
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
     message("embed_platform on")
     include_directories(/usr/local/cuda/targets/aarch64-linux/include)
@@ -17,7 +18,7 @@ endif()
 
 
 # LAYER PLUGIN LIB
-cuda_add_library(layerplugin SHARED ${PROJECT_SOURCE_DIR}/layers/yololayer.cu)
+cuda_add_library(layerplugin SHARED ${PROJECT_SOURCE_DIR}/layers/yololayer.cu nvdsparsebbox_Yolo.cpp)
 # needs to be linked here because triton will not have those libs preloaded!
 target_link_libraries(layerplugin nvinfer cudart)
 
